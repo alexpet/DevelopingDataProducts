@@ -172,7 +172,7 @@ findClosestStation <- function(geoCode, stations, dStart, dEnd) {
         return(st[st$USAF == CLO.USAF & st$WBAN == CLO.WBAN, ])
 }
 
-readUsageHistory <- function(uFilePath, uHeader, uSep, uQuote) {
+readUsageHistory <- function(uFilePath, uHeader = FALSE, uSep = ",", uQuote = "") {
         cat('Reading usage history...\n')
         usageHistory <- read.csv(file = uFilePath,
                                  header = uHeader,
@@ -207,6 +207,7 @@ prepareModelData <- function(usg, dw) {
                         group by chartdate
         "
         dm <- sqldf(agg_string)
+        dm$logAvgUsage <- log(dm$avgUsage + 1)
         dm$FH <- dm$avgTemp*9/5+32
         dm$CDD <- dm$FH-65
         dm$CDD[dm$CDD<0] <- 0
@@ -217,5 +218,150 @@ prepareModelData <- function(usg, dw) {
         dm$season[dm$dayCount >= 80 & dm$dayCount < 173] <- 'Spring'
         dm$season[dm$dayCount >= 173 & dm$dayCount < 267] <- 'Summer'
         dm$season[dm$dayCount >= 267 & dm$dayCount < 357] <- 'Fall'
+        dm$season <- as.factor(dm$season)
         return(dm)
+}
+
+findBestRegression <- function(md) {
+        cat('Find best regression...\n')
+        #The following code will run a series of predetermined models to 
+        # find best regression from the set using best Adjusted R-squared
+        bestfit <- NULL
+        bestAdjustRsquared <- 0
+        
+        cat('Model 1: avgUsage ~ HDD...\n')
+        fit1 <- lm(avgUsage ~ HDD, data = md)
+        adjR1 <- summary(fit1)$adj.r.squared
+        if(adjR1 > bestAdjustRsquared) {
+                cat('Model 1 selected as best...\n')
+                bestfit <- fit1
+                bestAdjustRsquared <- adjR1
+        }
+        
+        cat('Model 2: avgUsage ~ CDD...\n')
+        fit2 <- lm(avgUsage ~ CDD, data = md)
+        adjR2 <- summary(fit2)$adj.r.squared
+        if(adjR2 > bestAdjustRsquared) {
+                cat('Model 2 selected as best...\n')
+                bestfit <- fit2
+                bestAdjustRsquared <- adjR2
+        }
+        
+        cat('Model 3: avgUsage ~ avgTemp...\n')
+        fit3 <- lm(avgUsage ~ avgTemp, data = md)
+        adjR3 <- summary(fit3)$adj.r.squared
+        if(adjR3 > bestAdjustRsquared) {
+                cat('Model 3 selected as best...\n')
+                bestfit <- fit3
+                bestAdjustRsquared <- adjR3
+        }
+        
+        if(length(md$logAvgUsage[is.infinite(md$logAvgUsage) | 
+                                      is.nan(md$logAvgUsage)]) == 0) {
+                cat('Model 1(l): logAvgUsage ~ HDD...\n')
+                fit1l <- lm(logAvgUsage ~ HDD, data = md)
+                adjR1l <- summary(fit1l)$adj.r.squared
+                if(adjR1l > bestAdjustRsquared) {
+                        cat('Model 1 selected as best...\n')
+                        bestfit <- fit1l
+                        bestAdjustRsquared <- adjR1l
+                }
+                
+                cat('Model 2(l): logAvgUsage ~ CDD...\n')
+                fit2l <- lm(logAvgUsage ~ CDD, data = md)
+                adjR2l <- summary(fit2l)$adj.r.squared
+                if(adjR2l > bestAdjustRsquared) {
+                        cat('Model 2 selected as best...\n')
+                        bestfit <- fit2l
+                        bestAdjustRsquared <- adjR2l
+                }
+                
+                cat('Model 3(l): logAvgUsage ~ avgTemp...\n')
+                fit3l <- lm(logAvgUsage ~ avgTemp, data = md)
+                adjR3l <- summary(fit3l)$adj.r.squared
+                if(adjR3l > bestAdjustRsquared) {
+                        cat('Model 3 selected as best...\n')
+                        bestfit <- fit3l
+                        bestAdjustRsquared <- adjR3l
+                }                
+        }
+        
+        cat('Model 4: avgUsage ~ avgTemp:season...\n')
+        fit4 <- lm(avgUsage ~ avgTemp:season, data = md)
+        adjR4 <- summary(fit4)$adj.r.squared
+        if(adjR4 > bestAdjustRsquared) {
+                cat('Model 4 selected as best...\n')
+                bestfit <- fit4
+                bestAdjustRsquared <- adjR4
+        }
+        
+        if(length(md$logAvgUsage[is.infinite(md$logAvgUsage) | 
+                                 is.nan(md$logAvgUsage)]) == 0) {
+                cat('Model 4(l): logAvgUsage ~ avgTemp:season...\n')
+                fit4l <- lm(logAvgUsage ~ avgTemp:season, data = md)
+                adjR4l <- summary(fit4l)$adj.r.squared
+                if(adjR4l > bestAdjustRsquared) {
+                        cat('Model 4l selected as best...\n')
+                        bestfit <- fit4l
+                        bestAdjustRsquared <- adjR4l
+                }
+                
+        }
+        
+        cat('Model 5: avgUsage ~ avgTemp + season...\n')
+        fit5 <- lm(avgUsage ~ avgTemp + season, data = md)
+        adjR5 <- summary(fit5)$adj.r.squared
+        if(adjR5 > bestAdjustRsquared) {
+                cat('Model 5 selected as best...\n')
+                bestfit <- fit5
+                bestAdjustRsquared <- adjR5
+        }
+        
+        if(length(md$logAvgUsage[is.infinite(md$logAvgUsage) | 
+                                 is.nan(md$logAvgUsage)]) == 0) {
+                cat('Model 5(l): logAvgUsage ~ avgTemp + season...\n')
+                fit5l <- lm(logAvgUsage ~ avgTemp + season, data = md)
+                adjR5l <- summary(fit5l)$adj.r.squared
+                if(adjR5l > bestAdjustRsquared) {
+                        cat('Model 5l selected as best...\n')
+                        bestfit <- fit5l
+                        bestAdjustRsquared <- adjR5l
+                }
+                
+        }
+        
+        cat('Best Adjusted R squared: ',bestAdjustRsquared,'\n',sep='')
+        return(bestfit)
+}
+
+isLogModel <- function(bestFit) {
+        grepl("log",as.character(bestFit$call)[2])
+}
+
+buildPredictionModel <- function(md, bestFit) {
+        cat('Build a prediction model...\n')
+        p <- predict(bestFit, interval = "prediction")
+        pm <- cbind(md, p)
+        if(isLogModel(bestFit)) {
+                pm <- subset(pm, select = c(chartDate, avgUsage, fit, lwr, upr))
+                pm$fit <- exp(pm$fit)-1
+                pm$lwr <- exp(pm$lwr)-1
+                pm$upr <- exp(pm$upr)-1
+        } else {
+                pm <- subset(pm, select = c(chartDate, avgUsage, fit, lwr, upr))
+        }
+        return(pm)
+}
+
+plotPredictionModel <- function(predModel) {
+        cat('Plot the prediction model...\n')
+        g <-  ggplot(predModel, aes(x=chartDate,y=fit)) + 
+                geom_point() + 
+                geom_point(aes(x = predModel$chartDate,
+                               y = predModel$avgUsage), color = "red") +
+                geom_errorbar(aes(ymax = upr, ymin = lwr)) +
+                scale_colour_manual("", breaks = c("Prediction", "Actual"),
+                                    values = c("black", "red")) +
+                labs(title = "Prediction Model")
+        g
 }

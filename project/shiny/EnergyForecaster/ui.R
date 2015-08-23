@@ -26,7 +26,7 @@ shinyUI(fluidPage(
       ),
       
       selectInput("panelType", "Panel Type",
-                  c("Tables", "Plots", "Debug")),
+                  c("Tables", "Plots", "Regression")),
       
 #       tags$hr(),
 #       
@@ -46,6 +46,7 @@ shinyUI(fluidPage(
 ),
     
     mainPanel(
+            conditionalPanel("input.PanelType == 'Tables'", h2("Tables Used in Processing")),
             conditionalPanel("input.panelType == 'Tables'", tableOutput('table')),
             conditionalPanel("input.panelType == 'Tables'", tableOutput('result')),
             conditionalPanel("input.panelType == 'Tables'", tableOutput('weatherSample')),
@@ -53,26 +54,14 @@ shinyUI(fluidPage(
             conditionalPanel("input.panelType == 'Tables'", tableOutput('outUsageHistory')),
             conditionalPanel("input.panelType == 'Tables'", tableOutput('outdModel')),
             
-            conditionalPanel("input.panelType == 'Plots'", plotOutput('w')),
+            conditionalPanel("input.PanelType == 'Plots'", h2("Plots for Data Exploration")),
+            conditionalPanel("input.panelType == 'Plots'", showOutput('mdPlot','nvd3')),
+            conditionalPanel("input.panelType == 'Plots'", showOutput('mdScatter','nvd3')),
             
-            conditionalPanel("input.panelType == 'Debug'", textOutput('outaddress'))
-#                 tableOutput('table')
-#                 tableOutput('result'),
-#                 tableOutput('weatherSample'),
-#                 tableOutput('dWeatherSample'),
-#                 tableOutput('outUsageHistory'),
-#                 tableOutput('outdModel')
-#                     tabPanel("Tables",{
-#                             
-#                     }),
-#                     tabPanel("Plots",{
-#                             plotOutput('w')
-#                             # plotOutput('u')
-#                     }),
-#                     tabPanel("Debug",{
-#                             textOutput('outaddress')
-#                             # textOutput('outgeo')
-#                     })
+            conditionalPanel("input.PanelType == 'Regression'", h2("Regression Results")),
+            conditionalPanel("input.panelType == 'Regression'", textOutput('r_squared')),
+            conditionalPanel("input.panelType == 'Regression'", tableOutput('coef')),
+            conditionalPanel("input.panelType == 'Regression'", plotOutput('regressionPlot'))
             )
   )
 ))
