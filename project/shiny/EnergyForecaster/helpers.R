@@ -51,11 +51,13 @@ st$BEGIN <- as.numeric(substr(st$BEGIN, 1, 4))
 st$END <- as.numeric(substr(st$END, 1, 4))
 
 getStationInfo <- function(name) {
+        cat('Get station info...\n')
         station <- st[st$NAME == name, ]
         return(station)
 }
 
 weatherDownload <- function(filename, year, ftp = ftpLoc) {
+        cat('Download weather file...\n')
         destFile <- paste("data/raw/", filename, sep = "")
         urlFile <- paste(ftpLoc, year, "/", filename, sep = "")
         if(!file.exists(destFile)) {
@@ -73,6 +75,7 @@ weatherDownload <- function(filename, year, ftp = ftpLoc) {
 }
 
 getWeather <- function(stations, sDate, eDate) {
+        cat('Get weather data...\n')
         begin <- year(sDate)
         end <- year(eDate)
         years <- abs(end-begin)
@@ -103,6 +106,7 @@ getWeather <- function(stations, sDate, eDate) {
 }
 
 loadWeather <- function(stationResults) {
+        cat('Loading weather...\n')
         files <- subset(stationResults, 
                                 grepl("download", STATUS),select = FILE)
         files <- files[,1]
@@ -127,7 +131,7 @@ loadWeather <- function(stationResults) {
                 stations[i, 1:3] <- data[1, 1:3]
                 stations[i, 4:6] <- data[1, 8:10]
                 weatherData <- rbind(weatherData, data)
-                cat('<processWeather>',files[i],'</processWeather',sep=",")
+                cat('<processWeather>',files[i],'</processWeather>\n',sep=",")
         }
         return(weatherData)
 }
@@ -153,6 +157,7 @@ dailyWeather <- function(pw) {
 }
 
 findClosestStation <- function(geoCode, stations, dStart, dEnd) {
+        cat('Finding closest station...\n')
         r <- dim(stations)[1]
         st <- stations[!(is.na(stations$LAT) | is.na(stations$LON) |
                                  stations$LAT == 0 | stations$LON == 0) &
@@ -168,6 +173,7 @@ findClosestStation <- function(geoCode, stations, dStart, dEnd) {
 }
 
 readUsageHistory <- function(uFilePath, uHeader, uSep, uQuote) {
+        cat('Reading usage history...\n')
         usageHistory <- read.csv(file = uFilePath,
                                  header = uHeader,
                                  sep = uSep,
@@ -185,7 +191,8 @@ readUsageHistory <- function(uFilePath, uHeader, uSep, uQuote) {
         return(usageHistory)
 }
 
-prepareModelData <- function(usages, dailyWeather) {
+prepareModelData <- function(usg, dw) {
+        cat('Prepare data model...\n')
         join_string <- "select dw.*, 
                                 usg.* 
                         from dw 
@@ -210,4 +217,5 @@ prepareModelData <- function(usages, dailyWeather) {
         dm$season[dm$dayCount >= 80 & dm$dayCount < 173] <- 'Spring'
         dm$season[dm$dayCount >= 173 & dm$dayCount < 267] <- 'Summer'
         dm$season[dm$dayCount >= 267 & dm$dayCount < 357] <- 'Fall'
+        return(dm)
 }

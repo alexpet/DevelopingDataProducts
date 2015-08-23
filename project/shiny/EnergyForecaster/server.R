@@ -39,12 +39,18 @@ shinyServer(function(input, output) {
             usagesData <- input$usageHistory
             if (is.null(usagesData))
                     return(NULL)
-            readUsageHistory(
+            usg <- readUsageHistory(
                     uFilePath = usagesData$datapath,
                     uHeader = FALSE,
                     uSep = ',',
                     uQuote = ''
             )
+            usg <- usg[usg$end >= input$dates[1] & usg$start <= input$dates[2],]
+            usg
+    })
+    
+    dModel <- eventReactive(input$goButton,{
+            prepareModelData(usages(), dWeather())
     })
     
     output$outddress <- renderText(input$address)
@@ -57,7 +63,10 @@ shinyServer(function(input, output) {
     output$weatherSample <- renderTable({head(weather(), 10)})
     output$dWeatherSample <- renderTable({head(dWeather(), 10)})
     
+    
     output$outUsageHistory <- renderTable({usages()})
+    
+    output$outdModel <- renderTable({dModel()})
     
     
     output$w <- renderPlot({
@@ -68,8 +77,6 @@ shinyServer(function(input, output) {
     
     output$u <- renderPlot({
             u <- usages()
-            #             u <- u[u$end >= input$dates[1] &
-            #                                  u$start <= input$dates[2],]
             plot(u$usage ~ u$chartDate)
     })
     

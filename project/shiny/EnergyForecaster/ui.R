@@ -1,6 +1,7 @@
 library(shiny)
 library(lubridate)
 library(rCharts)
+library(markdown)
 
 shinyUI(fluidPage(
   titlePanel("Energy Forecaster"),
@@ -24,6 +25,9 @@ shinyUI(fluidPage(
                            '.csv')
       ),
       
+      selectInput("panelType", "Panel Type",
+                  c("Tables", "Plots", "Debug")),
+      
 #       tags$hr(),
 #       
 #       checkboxInput('header', 'Header', TRUE),
@@ -42,15 +46,33 @@ shinyUI(fluidPage(
 ),
     
     mainPanel(
-              textOutput('outaddress'),
-              textOutput('outgeo'),
-              tableOutput('table'),
-              tableOutput('result'),
-              tableOutput('weatherSample'),
-              tableOutput('dWeatherSample'),
-              tableOutput('outUsageHistory'),
-              plotOutput('w'),
-              plotOutput('u')
-              )
+            conditionalPanel("input.panelType == 'Tables'", tableOutput('table')),
+            conditionalPanel("input.panelType == 'Tables'", tableOutput('result')),
+            conditionalPanel("input.panelType == 'Tables'", tableOutput('weatherSample')),
+            conditionalPanel("input.panelType == 'Tables'", tableOutput('dWeatherSample')),
+            conditionalPanel("input.panelType == 'Tables'", tableOutput('outUsageHistory')),
+            conditionalPanel("input.panelType == 'Tables'", tableOutput('outdModel')),
+            
+            conditionalPanel("input.panelType == 'Plots'", plotOutput('w')),
+            
+            conditionalPanel("input.panelType == 'Debug'", textOutput('outaddress'))
+#                 tableOutput('table')
+#                 tableOutput('result'),
+#                 tableOutput('weatherSample'),
+#                 tableOutput('dWeatherSample'),
+#                 tableOutput('outUsageHistory'),
+#                 tableOutput('outdModel')
+#                     tabPanel("Tables",{
+#                             
+#                     }),
+#                     tabPanel("Plots",{
+#                             plotOutput('w')
+#                             # plotOutput('u')
+#                     }),
+#                     tabPanel("Debug",{
+#                             textOutput('outaddress')
+#                             # textOutput('outgeo')
+#                     })
+            )
   )
 ))
