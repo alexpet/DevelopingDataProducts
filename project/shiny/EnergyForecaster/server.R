@@ -19,6 +19,18 @@ shinyServer(function(input, output) {
             getWeather(dataInput(), input$dates[1], input$dates[2])
     })
     
+    weather <- reactive({
+            r <- result()
+            w <- loadWeather(r)
+            w <- processWeather(w)
+            w
+    })
+    
+    dWeather <- reactive({
+            dw <- dailyWeather(weather())
+            dw[dw$DATE >= input$dates[1] & dw$DATE <= input$dates[2],]
+    })
+    
     usages <- reactive({
             usagesData <- input$usageHistory
             if (is.null(usagesData))
@@ -38,19 +50,14 @@ shinyServer(function(input, output) {
     
     output$result <- renderTable({result()})
     
+    output$weatherSample <- renderTable({head(weather(), 10)})
+    output$dWeatherSample <- renderTable({head(dWeather(), 10)})
+    
     output$outUsageHistory <- renderTable({usages()})
     
     
     output$w <- renderPlot({
-            weather <- loadWeather(result())
-            weather <- processWeather(weather)
-            dw <- dailyWeather(weather)
-            dw <- dw[dw$DATE >= input$dates[1] &
-                                  dw$DATE <= input$dates[2],]
-            if(dim(dw)[1] == 0)
-                    return(NULL)
-            
-            with(dw,
+            with(dWeather(),
                  plot(TEMP ~ DATE)
                  )
             })

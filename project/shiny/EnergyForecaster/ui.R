@@ -46,6 +46,8 @@ shinyUI(fluidPage(
               textOutput('outgeo'),
               tableOutput('table'),
               tableOutput('result'),
+              tableOutput('weatherSample'),
+              tableOutput('dWeatherSample'),
               tableOutput('outUsageHistory'),
               plotOutput('w'),
               plotOutput('u')

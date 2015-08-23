@@ -133,12 +133,14 @@ loadWeather <- function(stationResults) {
 }
 
 processWeather <- function(rw) {
+        cat('Processing weather...\n')
         rw$TEMP[rw$TEMP == 999.9] <- NA
         rw$WIND.DIR[rw$WIND.DIR == 999] <- NA
         rw$WIND.SPD[rw$WIND.SPD == 999.9] <- NA
         rw$DEW.POINT[rw$DEW.POINT == 999.9] <- NA
         rw$ATM.PRES[rw$ATM.PRES == 9999.9] <- NA
-        rw <- rw[rw$MIN == 0, ]
+        m <- min(rw$MIN)
+        rw <- rw[rw$MIN == m, ]
         rw <- rw[order(rw$M, rw$D, rw$HR), ]
         rw$DATE <- as.Date(paste(rw$YR, rw$M, rw$D, sep = "-"),
                            format = "%Y-%m-%d")
@@ -146,7 +148,8 @@ processWeather <- function(rw) {
 }
 
 dailyWeather <- function(pw) {
-        return(aggregate(TEMP ~ DATE, data = w, mean))
+        cat('Processing Daily weather...\n')
+        return(aggregate(TEMP ~ DATE, data = pw, mean))
 }
 
 findClosestStation <- function(geoCode, stations, dStart, dEnd) {
