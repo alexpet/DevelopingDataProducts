@@ -102,12 +102,15 @@ getWeather <- function(stations, sDate, eDate) {
         outputs
 }
 
-loadWeather <- function() {
-        files <- list.files("data/raw")
+loadWeather <- function(stationResults) {
+        files <- subset(stationResults, 
+                                grepl("download", STATUS),select = FILE)
+        files <- files[,1]
         column.widths <- c(4, 6, 5, 4, 2, 2, 2, 2, 1, 6, 7, 5, 5, 5, 4, 3, 1, 1,
                            4, 1, 5, 1, 1, 1, 6, 1, 1, 1, 5, 1, 5, 1, 5, 1)
         stations <- as.data.frame(matrix(NA, length(files), 6))
         names(stations) <- c("USAFID", "WBAN", "YR", "LAT", "LONG", "ELEV")
+        weatherData <- NULL
         for (i in 1:length(files)) {
                 data <- read.fwf(paste("data/raw/", files[i], sep = ""), 
                                  column.widths)
@@ -123,13 +126,15 @@ loadWeather <- function() {
                 data$ATM.PRES <- data$ATM.PRES/10
                 stations[i, 1:3] <- data[1, 1:3]
                 stations[i, 4:6] <- data[1, 8:10]
+                weatherData <- rbind(weatherData, data)
+                cat('<processWeather>',files[i],'</processWeather',sep=",")
         }
-        return(data)
-        
+        return(weatherData)
 }
 
 processWeather <- function(rw) {
         rw$TEMP[rw$TEMP == 999.9] <- NA
+        rw$WIND.DIR[rw$WIND.DIR == 999] <- NA
         rw$WIND.SPD[rw$WIND.SPD == 999.9] <- NA
         rw$DEW.POINT[rw$DEW.POINT == 999.9] <- NA
         rw$ATM.PRES[rw$ATM.PRES == 9999.9] <- NA
@@ -138,6 +143,10 @@ processWeather <- function(rw) {
         rw$DATE <- as.Date(paste(rw$YR, rw$M, rw$D, sep = "-"),
                            format = "%Y-%m-%d")
         return(rw)
+}
+
+dailyWeather <- function(pw) {
+        return(aggregate(TEMP ~ DATE, data = w, mean))
 }
 
 findClosestStation <- function(geoCode, stations, dStart, dEnd) {
@@ -161,7 +170,41 @@ readUsageHistory <- function(uFilePath, uHeader, uSep, uQuote) {
                                  sep = uSep,
                                  quote = uQuote)
         names(usageHistory) <- c("start", "end", "usage")
-        usageHistory$start <- dmy(usageHistory$start)
-        usageHistory$end <- dmy(usageHistory$end)
+        usageHistory$usage <- as.numeric(usageHistory$usage)
+        usageHistory$start <- as.Date(dmy(usageHistory$start))
+        usageHistory$end <- as.Date(dmy(usageHistory$end))
+        usageHistory$usageDays <- as.integer(difftime(usageHistory$end, 
+                                                   usageHistory$start,
+                                                   units = "days")) # days
+        usageHistory$avgDailyUsage <- usageHistory$usage / usageHistory$usageDays
+        usageHistory$chartDate <- usageHistory$start + 
+                days(as.integer(usageHistory$usageDays/2))
         return(usageHistory)
+}
+
+prepareModelData <- function(usages, dailyWeather) {
+        join_string <- "select dw.*, 
+                                usg.* 
+                        from dw 
+                        inner join usg 
+                                on dw.DATE between usg.start and usg.end
+        "
+        mrg <- sqldf(join_string, stringsAsFactors = FALSE)
+        agg_string <- "select chartDate, 
+                                avg(TEMP) as avgTemp, 
+                                avg(avgDailyUsage) as avgUsage
+                        from mrg 
+                        group by chartdate
+        "
+        dm <- sqldf(agg_string)
+        dm$FH <- dm$avgTemp*9/5+32
+        dm$CDD <- dm$FH-65
+        dm$CDD[dm$CDD<0] <- 0
+        dm$HDD <- 65-dm$FH
+        dm$HDD[dm$HDD<0] <- 0
+        dm$dayCount <- as.integer(format(dm$chartDate, "%j")) 
+        dm$season <- 'Winter'
+        dm$season[dm$dayCount >= 80 & dm$dayCount < 173] <- 'Spring'
+        dm$season[dm$dayCount >= 173 & dm$dayCount < 267] <- 'Summer'
+        dm$season[dm$dayCount >= 267 & dm$dayCount < 357] <- 'Fall'
 }

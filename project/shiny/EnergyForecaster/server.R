@@ -4,6 +4,8 @@ library(lubridate)
 library(quantmod)
 library(RCurl)
 library(RJSONIO)
+library(rCharts)
+library(zoo)
 source("helpers.R")
 
 shinyServer(function(input, output) {
@@ -17,8 +19,17 @@ shinyServer(function(input, output) {
             getWeather(dataInput(), input$dates[1], input$dates[2])
     })
     
-#     weather <- loadWeather()
-#     weather <- processWeather(weather)
+    usages <- reactive({
+            usagesData <- input$usageHistory
+            if (is.null(usagesData))
+                    return(NULL)
+            readUsageHistory(
+                    uFilePath = usagesData$datapath,
+                    uHeader = FALSE,
+                    uSep = ',',
+                    uQuote = ''
+            )
+    })
     
     output$outddress <- renderText(input$address)
     output$outgeo <- renderText(input$geo)
@@ -27,28 +38,28 @@ shinyServer(function(input, output) {
     
     output$result <- renderTable({result()})
     
-#     output$w <- renderPlot({
-#             plot(weather$DATE, weather$TEMP, main = "Temperature readings",
-#                  ylab = "Temperature (Degrees C)",
-#                  xlab = "Month",
-#                  col = "grey")
-#     })
+    output$outUsageHistory <- renderTable({usages()})
     
-    output$outUsageHistory <- renderTable({
-            inFile <- input$usageHistory
-            
-            if (is.null(inFile))
+    
+    output$w <- renderPlot({
+            weather <- loadWeather(result())
+            weather <- processWeather(weather)
+            dw <- dailyWeather(weather)
+            dw <- dw[dw$DATE >= input$dates[1] &
+                                  dw$DATE <= input$dates[2],]
+            if(dim(dw)[1] == 0)
                     return(NULL)
             
-            
-            readUsageHistory(
-                    uFilePath = inFile$datapath,
-                    uHeader = FALSE,
-                    uSep = ',',
-                    uQuote = ''
-            )
-  })
+            with(dw,
+                 plot(TEMP ~ DATE)
+                 )
+            })
     
-    output$start <- renderText(as.numeric(format(input$dates[1], "%Y")))
-    output$end <- renderText(as.numeric(format(input$dates[2], "%Y")))
+    output$u <- renderPlot({
+            u <- usages()
+#             u <- u[u$end >= input$dates[1] &
+#                                  u$start <= input$dates[2],]
+            plot(u$usage ~ u$chartDate)
+    })
+    
 })

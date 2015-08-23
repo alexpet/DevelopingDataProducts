@@ -1,5 +1,6 @@
 library(shiny)
 library(lubridate)
+library(rCharts)
 
 shinyUI(fluidPage(
   titlePanel("Energy Forecaster"),
@@ -46,9 +47,8 @@ shinyUI(fluidPage(
               tableOutput('table'),
               tableOutput('result'),
               tableOutput('outUsageHistory'),
-              # plotOutput('w'),
-              textOutput('start'),
-              textOutput('end')
+              plotOutput('w'),
+              plotOutput('u')
               )
   )
 ))
