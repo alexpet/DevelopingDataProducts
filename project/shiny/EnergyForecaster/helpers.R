@@ -31,11 +31,13 @@ gGeoCode <- function(address,verbose=FALSE) {
 
 #Set the file name
 file <- "ftp://ftp.ncdc.noaa.gov/pub/data/noaa/isd-history.csv"
+mFilePath <- "data/isd-history.csv"
 ftpLoc <- "ftp://ftp.ncdc.noaa.gov/pub/data/noaa/"
 
 #Attempt to load the file
-repeat {
-        try(download.file(file, "data/isd-history.csv",
+#Todo: Change this to check if file is available then download.
+if(!file.exists(mFilePath)) {
+        try(download.file(file, mFilePath,
                           quiet = TRUE))
         if (file.info("data/isd-history.csv")$size >
             0) {
@@ -151,4 +153,15 @@ findClosestStation <- function(geoCode, stations, dStart, dEnd) {
         return(st[st$DIS == min(st$DIS), ])
         # return the results
         return(st[st$USAF == CLO.USAF & st$WBAN == CLO.WBAN, ])
+}
+
+readUsageHistory <- function(uFilePath, uHeader, uSep, uQuote) {
+        usageHistory <- read.csv(file = uFilePath,
+                                 header = uHeader,
+                                 sep = uSep,
+                                 quote = uQuote)
+        names(usageHistory) <- c("start", "end", "usage")
+        usageHistory$start <- dmy(usageHistory$start)
+        usageHistory$end <- dmy(usageHistory$end)
+        return(usageHistory)
 }

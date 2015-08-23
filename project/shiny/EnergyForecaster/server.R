@@ -34,6 +34,21 @@ shinyServer(function(input, output) {
 #                  col = "grey")
 #     })
     
+    output$outUsageHistory <- renderTable({
+            inFile <- input$usageHistory
+            
+            if (is.null(inFile))
+                    return(NULL)
+            
+            
+            readUsageHistory(
+                    uFilePath = inFile$datapath,
+                    uHeader = FALSE,
+                    uSep = ',',
+                    uQuote = ''
+            )
+  })
+    
     output$start <- renderText(as.numeric(format(input$dates[1], "%Y")))
     output$end <- renderText(as.numeric(format(input$dates[2], "%Y")))
 })
