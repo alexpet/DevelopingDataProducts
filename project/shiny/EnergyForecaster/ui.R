@@ -38,7 +38,7 @@ shinyUI(fluidPage(
 #                      'Single Quote'="'"),
 #                    '"'),
       
-       submitButton(text = "Submit")
+       actionButton("goButton","Go!")
 ),
     
     mainPanel(

@@ -9,29 +9,33 @@ library(zoo)
 source("helpers.R")
 
 shinyServer(function(input, output) {
+    # here, we just print a message to the console
+    observeEvent(input$goButton, {
+            cat("Showing", input$dates, "rows\n")
+    })
     
-    dataInput <- reactive({
+    dataInput <- eventReactive(input$goButton,{
             loc <- gGeoCode(input$address)
             findClosestStation(loc, st, input$dates[1], input$dates[2])
     })
     
-    result <- reactive({
+    result <- eventReactive(input$goButton,{
             getWeather(dataInput(), input$dates[1], input$dates[2])
     })
     
-    weather <- reactive({
+    weather <- eventReactive(input$goButton, {
             r <- result()
             w <- loadWeather(r)
             w <- processWeather(w)
             w
     })
     
-    dWeather <- reactive({
+    dWeather <- eventReactive(input$goButton, {
             dw <- dailyWeather(weather())
             dw[dw$DATE >= input$dates[1] & dw$DATE <= input$dates[2],]
     })
     
-    usages <- reactive({
+    usages <- eventReactive(input$goButton,{
             usagesData <- input$usageHistory
             if (is.null(usagesData))
                     return(NULL)
@@ -59,13 +63,13 @@ shinyServer(function(input, output) {
     output$w <- renderPlot({
             with(dWeather(),
                  plot(TEMP ~ DATE)
-                 )
-            })
+            )
+    })
     
     output$u <- renderPlot({
             u <- usages()
-#             u <- u[u$end >= input$dates[1] &
-#                                  u$start <= input$dates[2],]
+            #             u <- u[u$end >= input$dates[1] &
+            #                                  u$start <= input$dates[2],]
             plot(u$usage ~ u$chartDate)
     })
     
