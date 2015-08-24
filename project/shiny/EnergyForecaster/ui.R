@@ -4,23 +4,25 @@ library(rCharts)
 library(markdown)
 
 shinyUI(fluidPage(
-  titlePanel("Energy Forecaster"),
+  titlePanel("Energy Consumption Regression Modeller"),
   
   sidebarLayout(
     sidebarPanel(
-      helpText("Enter your home city and province or state. 
-        Then upload your usage data in csv format.
-        A forecast model will genererated for you"),
+      h4("Instructions:"), 
+      helpText("1. Enter your address in any format."),
+      helpText("2. Upload csv (see example links below which are default city)."),
+      helpText("3. Hit Go!"),
+      helpText("4. Explore the model using 'Panel Types' available below."),
     
-      textInput("address", "Enter Weather Station:", "Mississauga, ON"),
+      textInput("address", "Enter Address:", "Mississauga, ON"),
 
       dateRangeInput("dates", 
-                     "Date range",
+                     "Date range (maximum):",
                      start = ymd(Sys.Date()) - years(2), 
                      end = Sys.Date()
                      ),
                      
-      fileInput('usageHistory', 'Choose CSV file', 
+      fileInput('usageHistory', 'Choose CSV file:', 
                 accept = c('text/csv', 'text/comma-separated-values,text/plain', 
                            '.csv')
       ),
@@ -46,7 +48,7 @@ shinyUI(fluidPage(
 ),
     
     mainPanel(
-            conditionalPanel("input.PanelType == 'Tables'", h2("Tables Used in Processing")),
+            conditionalPanel("input.panelType == 'Tables'", textOutput('tablesTitle')),
             conditionalPanel("input.panelType == 'Tables'", tableOutput('table')),
             conditionalPanel("input.panelType == 'Tables'", tableOutput('result')),
             conditionalPanel("input.panelType == 'Tables'", tableOutput('weatherSample')),
@@ -54,11 +56,12 @@ shinyUI(fluidPage(
             conditionalPanel("input.panelType == 'Tables'", tableOutput('outUsageHistory')),
             conditionalPanel("input.panelType == 'Tables'", tableOutput('outdModel')),
             
-            conditionalPanel("input.PanelType == 'Plots'", h2("Plots for Data Exploration")),
+            conditionalPanel("input.panelType == 'Plots'", textOutput('plotsTitle')),
             conditionalPanel("input.panelType == 'Plots'", showOutput('mdPlot','nvd3')),
             conditionalPanel("input.panelType == 'Plots'", showOutput('mdScatter','nvd3')),
             
-            conditionalPanel("input.PanelType == 'Regression'", h2("Regression Results")),
+            conditionalPanel("input.panelType == 'Regression'", textOutput('regressionTitle')),
+            conditionalPanel("input.panelType == 'Regression'", textOutput('regressionSummary')),                  
             conditionalPanel("input.panelType == 'Regression'", textOutput('r_squared')),
             conditionalPanel("input.panelType == 'Regression'", tableOutput('coef')),
             conditionalPanel("input.panelType == 'Regression'", plotOutput('regressionPlot'))
