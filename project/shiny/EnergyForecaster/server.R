@@ -7,6 +7,8 @@ library(RJSONIO)
 library(rCharts)
 library(zoo)
 library(ggplot2)
+library(sqldf)
+library(reshape)
 source("helpers.R")
 
 shinyServer(function(input, output) {
@@ -48,6 +50,9 @@ shinyServer(function(input, output) {
     #Generate model data
     dModel <- eventReactive(input$goButton,{
             prepareModelData(usages(), dWeather())
+    })
+    normal <- eventReactive(input$goButton,{
+            normalWeather(dWeather(), input$dates[2])
     })
     #Generate a regression model
     regressionModel <- eventReactive(input$goButton, {
@@ -128,11 +133,13 @@ shinyServer(function(input, output) {
     output$regressionPlot <- renderPlot({
             dm <- dModel()
             bf <- regressionModel()
-            predModel <- buildPredictionModel(dm, bf)
+            nor <- prepareNormalModelData(normal())
+            #predModel <- buildPredictionModel(dm, bf)
+            predModel <- buildNormalModel(nor, bf)
             ggplot(predModel, aes(x=chartDate,y=fit)) + 
                     geom_point() +
-                    geom_point(aes(x = chartDate,
-                                   y = avgUsage), color = "red") +
+#                     geom_point(aes(x = chartDate,
+#                                    y = avgUsage), color = "red") +
                     geom_errorbar(aes(ymax = upr, ymin = lwr)) +
                     scale_colour_manual("", breaks = c("Prediction", "Actual"),
                                         values = c("black", "red")) +

@@ -156,6 +156,16 @@ dailyWeather <- function(pw) {
         return(aggregate(TEMP ~ DATE, data = pw, mean))
 }
 
+normalWeather <- function(pw, d) {
+        cat('Processing Normal weather...\n')
+        weather <- pw
+        weather$DATE <- ymd(paste(format(d, "%Y"), 
+                                  format(weather$DATE,"%m"),
+                                  '01',
+                                  sep = ""))
+        return(aggregate(TEMP ~ DATE, data = weather, mean))
+}
+
 findClosestStation <- function(geoCode, stations, dStart, dEnd) {
         cat('Finding closest station...\n')
         r <- dim(stations)[1]
@@ -208,6 +218,23 @@ prepareModelData <- function(usg, dw) {
         "
         dm <- sqldf(agg_string)
         dm$logAvgUsage <- log(dm$avgUsage + 1)
+        dm$FH <- dm$avgTemp*9/5+32
+        dm$CDD <- dm$FH-65
+        dm$CDD[dm$CDD<0] <- 0
+        dm$HDD <- 65-dm$FH
+        dm$HDD[dm$HDD<0] <- 0
+        dm$dayCount <- as.integer(format(dm$chartDate, "%j")) 
+        dm$season <- 'Winter'
+        dm$season[dm$dayCount >= 80 & dm$dayCount < 173] <- 'Spring'
+        dm$season[dm$dayCount >= 173 & dm$dayCount < 267] <- 'Summer'
+        dm$season[dm$dayCount >= 267 & dm$dayCount < 357] <- 'Fall'
+        dm$season <- as.factor(dm$season)
+        return(dm)
+}
+
+prepareNormalModelData <- function(dw) {
+        dm <- dw
+        names(dm) = c("chartDate", "avgTemp")
         dm$FH <- dm$avgTemp*9/5+32
         dm$CDD <- dm$FH-65
         dm$CDD[dm$CDD<0] <- 0
@@ -349,6 +376,21 @@ buildPredictionModel <- function(md, bestFit) {
                 pm$upr <- exp(pm$upr)-1
         } else {
                 pm <- subset(pm, select = c(chartDate, avgUsage, fit, lwr, upr))
+        }
+        return(pm)
+}
+
+buildNormalModel <- function(normal, bestFit) {
+        cat('Build a prediction model...\n')
+        p <- predict(bestFit, newdata = normal, interval = "prediction")
+        pm <- cbind(normal, p)
+        if(isLogModel(bestFit)) {
+                pm <- subset(pm, select = c(chartDate, fit, lwr, upr))
+                pm$fit <- exp(pm$fit)-1
+                pm$lwr <- exp(pm$lwr)-1
+                pm$upr <- exp(pm$upr)-1
+        } else {
+                pm <- subset(pm, select = c(chartDate, fit, lwr, upr))
         }
         return(pm)
 }
