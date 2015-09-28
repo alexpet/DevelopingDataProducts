@@ -1,0 +1,53 @@
+ftp://ftp.ncdc.noaa.gov/pub/data/noaa/2011/716240-99999-2011.gz
+ftp://ftp.ncdc.noaa.gov/pub/data/noaa/2012/716240-99999-2012.gz
+
+C:/Users/Ekellan/git/DevelopingDataProducts/project/shiny/EnergyForecaster
+C:/Users/Ekellan/git/DevelopingDataProducts/project/shiny/GasUsages.csv
+
+UI:
+X1. Add a debug panel type and instructions.
+XX2. Add titles to every panel using a graphic.
+
+Documentation:
+X1. Add single tab with instructions and documentation for the user.
+X2. Remove panel type.
+
+Processing
+X1. Replace table with general information about Weather station selected in relation to address entered.
+X2. Remove data table for weather station and replace with map.
+X3. Fix model table.
+X4. Add normal model table.
+X5. Fix tables with proper headers and rounding: Training Model, Normal Weather
+X6. Add information about weather station to map.
+X7. Change title of second tab to Normal Temporatures
+
+Exploration
+X1. Add leaflet plot to show weather station and address entered.
+X2. Fix time series plot. May need to change to googleVis.
+X3. Replace scatter plot with googleVis version.
+X4. Revise scatter plot starting parameters. X = Temperature, Y = Consumption, Color = Season, Size = UsageDays
+
+Regression:
+XX1. Show results for all runs.
+X2. Show results for final run.
+X3. See if better graphing options available for normal weather prediction model.
+X	a. Interactive temperature changer.
+X4. Normal Forecast: Change slider to 'Temperature deviation from normal (Farenheit)' Change x-label. Change y-label. Format. Change Title.
+X5. R Output: Add title to R-output and add table of residuals.
+X6. Backcast: Change x-label. Change y-label. Format. Change Title.
+
+
+Debugging:
+X1. Move weather file list to last tab.
+X2. Move raw weather data table to last tab.
+X3. Move processed weather table to last tab.
+X4. Move usage table to last tab.
+X5. Add raw regression results.
+
+Code change:
+1. Remove any weather data that has zero file size.
+X2. Calculate number of days in the month to get total volume.
+XX3. Fix actuals and normal to show total consumption for graphs.
+4. Implement a cache.
+5. Remove excess code.
+6. Remove comments.
